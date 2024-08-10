@@ -1,0 +1,25 @@
+services:
+  mongo:
+    image: mongo:5
+    container_name: mongo
+    restart: always
+    command: ["--replSet", "replica-set", "--bind_ip_all", "--port", "27017"]
+    ports:
+      - 27017:27017
+    healthcheck:
+      test: test $$(echo "rs.initiate({_id:'replica-set',members:[{_id:0,host:\"mongo:27017\"}]}).ok || rs.status().ok" | mongo --port 27017 --quiet) -eq 1
+        
+  inventory-managment:
+    container_name: inventory-managment
+    build:
+      context: .
+    restart: on-failure
+    environment:
+      HTTP_PORT: 3001
+    entrypoint: npm run start:dev
+    ports:
+      - 3001:3001
+    volumes:
+      - ./:/app:delegated
+    depends_on:
+      - mongo
